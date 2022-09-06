@@ -9,14 +9,14 @@ import vmfWriter.entity.solidEntity.Buyzone;
 
 public class PlayerSpawnTf2 extends Action {
 
-	private final static int SPACE = 50;
+  private final static int SPACE = 50;
 
-	private RotateablePointEntity type;
-	private boolean police;
+  private RotateablePointEntity type;
+  private boolean police;
 
-	public PlayerSpawnTf2() {
+  public PlayerSpawnTf2() {
 
-	}
+  }
 
 //	public PlayerSpawnTf2(Block material, RotateablePointEntity type, boolean police) {
 //		super.setMaterialUsedFor(material);
@@ -39,13 +39,13 @@ public class PlayerSpawnTf2 extends Action {
 //		return list;
 //	}
 
-	@Override
-	public void add(Mapper context, Position p, Block material) {
-		Position end = context.getCuboidFinder()
-				.getBestXZ(p, material);
-		context.addPointEntitys(p, end, PlayerSpawnTf2.SPACE, this.type);
-		context.markAsConverted(p, end);
-		end.move(0, 2, 0);
-		context.addSolidEntity(new Buyzone(context.createCuboid(p, end, null), this.police));
-	}
+  @Override
+  public void add(Mapper context, Position p, Block material) {
+    Position end = context.getCuboidFinder()
+      .getBestXZ(p, material);
+    context.addPointEntitys(p, end, PlayerSpawnTf2.SPACE, this.type);
+    context.markAsConverted(p, end);
+    end.move(0, 2, 0);
+    context.addSolidEntity(new Buyzone(context.createCuboid(p, end, null), this.police));
+  }
 }

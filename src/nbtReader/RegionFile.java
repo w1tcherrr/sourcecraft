@@ -60,323 +60,315 @@ package nbtReader;
 
  */
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import basic.Loggger;
+import periphery.Minecraft;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
-import basic.Loggger;
-import periphery.Minecraft;
-
 public class RegionFile {
 
-	private static final int VERSION_GZIP = 1;
-	private static final int VERSION_DEFLATE = 2;
+  static final int CHUNK_HEADER_SIZE = 5;
+  private static final int VERSION_GZIP = 1;
+  private static final int VERSION_DEFLATE = 2;
+  private static final int SECTOR_BYTES = 4096;
+  private static final int SECTOR_INTS = RegionFile.SECTOR_BYTES / 4;
+  private static final byte emptySector[] = new byte[4096];
 
-	private static final int SECTOR_BYTES = 4096;
-	private static final int SECTOR_INTS = RegionFile.SECTOR_BYTES / 4;
+  private final File fileName;
+  private final int offsets[];
+  private final int chunkTimestamps[];
+  private RandomAccessFile file;
+  private ArrayList<Boolean> sectorFree;
+  private int sizeDelta;
+  private long lastModified = 0;
 
-	static final int CHUNK_HEADER_SIZE = 5;
-	private static final byte emptySector[] = new byte[4096];
+  public RegionFile(File path) {
+    this.offsets = new int[RegionFile.SECTOR_INTS];
+    this.chunkTimestamps = new int[RegionFile.SECTOR_INTS];
 
-	private final File fileName;
-	private RandomAccessFile file;
-	private final int offsets[];
-	private final int chunkTimestamps[];
-	private ArrayList<Boolean> sectorFree;
-	private int sizeDelta;
-	private long lastModified = 0;
+    this.fileName = path;
 
-	public RegionFile(File path) {
-		this.offsets = new int[RegionFile.SECTOR_INTS];
-		this.chunkTimestamps = new int[RegionFile.SECTOR_INTS];
+    this.sizeDelta = 0;
 
-		this.fileName = path;
+    try {
+      if (path.exists()) {
+        this.lastModified = path.lastModified();
+      }
 
-		this.sizeDelta = 0;
+      this.file = new RandomAccessFile(path, "rw");
 
-		try {
-			if (path.exists()) {
-				this.lastModified = path.lastModified();
-			}
+      if (this.file.length() < RegionFile.SECTOR_BYTES) {
+        /* we need to write the chunk offset table */
+        for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
+          this.file.writeInt(0);
+        }
+        // write another sector for the timestamp info
+        for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
+          this.file.writeInt(0);
+        }
 
-			this.file = new RandomAccessFile(path, "rw");
+        this.sizeDelta += RegionFile.SECTOR_BYTES * 2;
+      }
 
-			if (this.file.length() < RegionFile.SECTOR_BYTES) {
-				/* we need to write the chunk offset table */
-				for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
-					this.file.writeInt(0);
-				}
-				// write another sector for the timestamp info
-				for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
-					this.file.writeInt(0);
-				}
+      if ((this.file.length() & 0xfff) != 0) {
+        /* the file size is not a multiple of 4KB, grow it */
+        for (int i = 0; i < (this.file.length() & 0xfff); ++i) {
+          this.file.write((byte) 0);
+        }
+      }
 
-				this.sizeDelta += RegionFile.SECTOR_BYTES * 2;
-			}
+      /* set up the available sector map */
+      int nSectors = (int) this.file.length() / RegionFile.SECTOR_BYTES;
+      this.sectorFree = new ArrayList<>(nSectors);
 
-			if ((this.file.length() & 0xfff) != 0) {
-				/* the file size is not a multiple of 4KB, grow it */
-				for (int i = 0; i < (this.file.length() & 0xfff); ++i) {
-					this.file.write((byte) 0);
-				}
-			}
+      for (int i = 0; i < nSectors; ++i) {
+        this.sectorFree.add(true);
+      }
 
-			/* set up the available sector map */
-			int nSectors = (int) this.file.length() / RegionFile.SECTOR_BYTES;
-			this.sectorFree = new ArrayList<>(nSectors);
+      this.sectorFree.set(0, false); // chunk offset table
+      this.sectorFree.set(1, false); // for the last modified info
 
-			for (int i = 0; i < nSectors; ++i) {
-				this.sectorFree.add(true);
-			}
+      this.file.seek(0);
+      for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
+        int offset = this.file.readInt();
+        this.offsets[i] = offset;
+        if (offset != 0 && (offset >> 8) + (offset & 0xFF) <= this.sectorFree.size()) {
+          for (int sectorNum = 0; sectorNum < (offset & 0xFF); ++sectorNum) {
+            this.sectorFree.set((offset >> 8) + sectorNum, false);
+          }
+        }
+      }
+      for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
+        int lastModValue = this.file.readInt();
+        this.chunkTimestamps[i] = lastModValue;
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 
-			this.sectorFree.set(0, false); // chunk offset table
-			this.sectorFree.set(1, false); // for the last modified info
+  /* the modification date of the region file when it was first opened */
+  public long lastModified() {
+    return this.lastModified;
+  }
 
-			this.file.seek(0);
-			for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
-				int offset = this.file.readInt();
-				this.offsets[i] = offset;
-				if (offset != 0 && (offset >> 8) + (offset & 0xFF) <= this.sectorFree.size()) {
-					for (int sectorNum = 0; sectorNum < (offset & 0xFF); ++sectorNum) {
-						this.sectorFree.set((offset >> 8) + sectorNum, false);
-					}
-				}
-			}
-			for (int i = 0; i < RegionFile.SECTOR_INTS; ++i) {
-				int lastModValue = this.file.readInt();
-				this.chunkTimestamps[i] = lastModValue;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+  /* gets how much the region file has grown since it was last checked */
+  public synchronized int getSizeDelta() {
+    int ret = this.sizeDelta;
+    this.sizeDelta = 0;
+    return ret;
+  }
 
-	/* the modification date of the region file when it was first opened */
-	public long lastModified() {
-		return this.lastModified;
-	}
+  private void debug(String mode, int x, int z, String in) {
+    Loggger.log("region " + mode + " " + this.fileName.getName() + "[" + x + "," + z + "] = " + in, 1);
+  }
 
-	/* gets how much the region file has grown since it was last checked */
-	public synchronized int getSizeDelta() {
-		int ret = this.sizeDelta;
-		this.sizeDelta = 0;
-		return ret;
-	}
+  private void debug(String mode, int x, int z, int count, String in) {
+    Loggger.log("region " + mode + " " + this.fileName.getName() + "[" + x + "," + z + "] " + count + "B = " + in,
+      1);
+  }
 
-	private void debug(String mode, int x, int z, String in) {
-		Loggger.log("region " + mode + " " + this.fileName.getName() + "[" + x + "," + z + "] = " + in, 1);
-	}
+  /**
+   * gets an (uncompressed) stream representing the chunk data returns null if the
+   * chunk is not found or an error occurs
+   */
+  public synchronized DataInputStream getChunkDataInputStream(int x, int z) {
+    if (this.outOfBounds(x, z)) {
+      this.debug("read", x, z, "out of bounds");
+      return null;
+    }
 
-	private void debug(String mode, int x, int z, int count, String in) {
-		Loggger.log("region " + mode + " " + this.fileName.getName() + "[" + x + "," + z + "] " + count + "B = " + in,
-				1);
-	}
+    try {
+      int offset = this.getOffset(x, z);
+      if (offset == 0) {
+        Loggger.log("chunk " + x + " " + z + " not present in file " + this.fileName.getName());
+        return null;
+      }
 
-	/**
-	 * gets an (uncompressed) stream representing the chunk data returns null if the
-	 * chunk is not found or an error occurs
-	 */
-	public synchronized DataInputStream getChunkDataInputStream(int x, int z) {
-		if (this.outOfBounds(x, z)) {
-			this.debug("read", x, z, "out of bounds");
-			return null;
-		}
+      int sectorNumber = offset >> 8;
+      int numSectors = offset & 0xFF;
 
-		try {
-			int offset = this.getOffset(x, z);
-			if (offset == 0) {
-				Loggger.log("chunk " + x + " " + z + " not present in file " + this.fileName.getName());
-				return null;
-			}
+      if (sectorNumber + numSectors > this.sectorFree.size()) {
+        this.debug("read", x, z, "invalid sector");
+        return null;
+      }
 
-			int sectorNumber = offset >> 8;
-			int numSectors = offset & 0xFF;
+      this.file.seek(sectorNumber * RegionFile.SECTOR_BYTES);
+      int length = this.file.readInt();
 
-			if (sectorNumber + numSectors > this.sectorFree.size()) {
-				this.debug("read", x, z, "invalid sector");
-				return null;
-			}
+      if (length > RegionFile.SECTOR_BYTES * numSectors) {
+        this.debug("read", x, z, "invalid length: " + length + " > 4096 * " + numSectors);
+        return null;
+      }
 
-			this.file.seek(sectorNumber * RegionFile.SECTOR_BYTES);
-			int length = this.file.readInt();
+      byte version = this.file.readByte();
+      if (version == RegionFile.VERSION_GZIP) {
+        byte[] data = new byte[length - 1];
+        this.file.read(data);
+        DataInputStream ret = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)));
+        // debug("READ", x, z, " = found");
+        return ret;
+      } else if (version == RegionFile.VERSION_DEFLATE) {
+        byte[] data = new byte[length - 1];
+        this.file.read(data);
+        DataInputStream ret = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)));
+        // debug("READ", x, z, " = found");
+        return ret;
+      }
 
-			if (length > RegionFile.SECTOR_BYTES * numSectors) {
-				this.debug("read", x, z, "invalid length: " + length + " > 4096 * " + numSectors);
-				return null;
-			}
+      this.debug("read", x, z, "unknown version " + version);
+      return null;
+    } catch (IOException e) {
+      this.debug("read", x, z, "exception");
+      return null;
+    }
+  }
 
-			byte version = this.file.readByte();
-			if (version == RegionFile.VERSION_GZIP) {
-				byte[] data = new byte[length - 1];
-				this.file.read(data);
-				DataInputStream ret = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)));
-				// debug("READ", x, z, " = found");
-				return ret;
-			} else if (version == RegionFile.VERSION_DEFLATE) {
-				byte[] data = new byte[length - 1];
-				this.file.read(data);
-				DataInputStream ret = new DataInputStream(new InflaterInputStream(new ByteArrayInputStream(data)));
-				// debug("READ", x, z, " = found");
-				return ret;
-			}
+  public DataOutputStream getChunkDataOutputStream(int x, int z) {
+    if (this.outOfBounds(x, z)) {
+      return null;
+    }
 
-			this.debug("read", x, z, "unknown version " + version);
-			return null;
-		} catch (IOException e) {
-			this.debug("read", x, z, "exception");
-			return null;
-		}
-	}
+    return new DataOutputStream(new DeflaterOutputStream(new ChunkBuffer(x, z)));
+  }
 
-	public DataOutputStream getChunkDataOutputStream(int x, int z) {
-		if (this.outOfBounds(x, z)) {
-			return null;
-		}
+  /* write a chunk at (x,z) with length bytes of data to disk */
+  protected synchronized void write(int x, int z, byte[] data, int length) {
+    try {
+      int offset = this.getOffset(x, z);
+      int sectorNumber = offset >> 8;
+      int sectorsAllocated = offset & 0xFF;
+      int sectorsNeeded = (length + RegionFile.CHUNK_HEADER_SIZE) / RegionFile.SECTOR_BYTES + 1;
 
-		return new DataOutputStream(new DeflaterOutputStream(new ChunkBuffer(x, z)));
-	}
+      // maximum chunk size is 1MB
+      if (sectorsNeeded >= 256) {
+        return;
+      }
 
-	/*
-	 * lets chunk writing be multithreaded by not locking the whole file as a chunk
-	 * is serializing -- only writes when serialization is over
-	 */
-	class ChunkBuffer extends ByteArrayOutputStream {
+      if (sectorNumber != 0 && sectorsAllocated == sectorsNeeded) {
+        /* we can simply overwrite the old sectors */
+        this.debug("SAVE", x, z, length, "rewrite");
+        this.write(sectorNumber, data, length);
+      } else {
+        /* we need to allocate new sectors */
 
-		private int x, z;
+        /* mark the sectors previously used for this chunk as free */
+        for (int i = 0; i < sectorsAllocated; ++i) {
+          this.sectorFree.set(sectorNumber + i, true);
+        }
 
-		public ChunkBuffer(int x, int z) {
-			super(8096); // initialize to 8KB
-			this.x = x;
-			this.z = z;
-		}
+        /* scan for a free space large enough to store this chunk */
+        int runStart = this.sectorFree.indexOf(true);
+        int runLength = 0;
+        if (runStart != -1) {
+          for (int i = runStart; i < this.sectorFree.size(); ++i) {
+            if (runLength != 0) {
+              if (this.sectorFree.get(i)) {
+                runLength++;
+              } else {
+                runLength = 0;
+              }
+            } else if (this.sectorFree.get(i)) {
+              runStart = i;
+              runLength = 1;
+            }
+            if (runLength >= sectorsNeeded) {
+              break;
+            }
+          }
+        }
 
-		@Override
-		public void close() {
-			RegionFile.this.write(this.x, this.z, this.buf, this.count);
-		}
-	}
+        if (runLength >= sectorsNeeded) {
+          /* we found a free space large enough */
+          this.debug("SAVE", x, z, length, "reuse");
+          sectorNumber = runStart;
+          this.setOffset(x, z, (sectorNumber << 8) | sectorsNeeded);
+          for (int i = 0; i < sectorsNeeded; ++i) {
+            this.sectorFree.set(sectorNumber + i, false);
+          }
+          this.write(sectorNumber, data, length);
+        } else {
+          /*
+           * no free space large enough found -- we need to grow the file
+           */
+          this.debug("SAVE", x, z, length, "grow");
+          this.file.seek(this.file.length());
+          sectorNumber = this.sectorFree.size();
+          for (int i = 0; i < sectorsNeeded; ++i) {
+            this.file.write(RegionFile.emptySector);
+            this.sectorFree.add(false);
+          }
+          this.sizeDelta += RegionFile.SECTOR_BYTES * sectorsNeeded;
 
-	/* write a chunk at (x,z) with length bytes of data to disk */
-	protected synchronized void write(int x, int z, byte[] data, int length) {
-		try {
-			int offset = this.getOffset(x, z);
-			int sectorNumber = offset >> 8;
-			int sectorsAllocated = offset & 0xFF;
-			int sectorsNeeded = (length + RegionFile.CHUNK_HEADER_SIZE) / RegionFile.SECTOR_BYTES + 1;
+          this.write(sectorNumber, data, length);
+          this.setOffset(x, z, (sectorNumber << 8) | sectorsNeeded);
+        }
+      }
+      this.setTimestamp(x, z, (int) (System.currentTimeMillis() / 1000L));
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
 
-			// maximum chunk size is 1MB
-			if (sectorsNeeded >= 256) {
-				return;
-			}
+  /* write a chunk data to the region file at specified sector number */
+  private void write(int sectorNumber, byte[] data, int length) throws IOException {
+    Loggger.log(" " + sectorNumber);
+    this.file.seek(sectorNumber * RegionFile.SECTOR_BYTES);
+    this.file.writeInt(length + 1); // chunk length
+    this.file.writeByte(RegionFile.VERSION_DEFLATE); // chunk version number
+    this.file.write(data, 0, length); // chunk data
+  }
 
-			if (sectorNumber != 0 && sectorsAllocated == sectorsNeeded) {
-				/* we can simply overwrite the old sectors */
-				this.debug("SAVE", x, z, length, "rewrite");
-				this.write(sectorNumber, data, length);
-			} else {
-				/* we need to allocate new sectors */
+  /* is this an invalid chunk coordinate? */
+  private boolean outOfBounds(int x, int z) {
+    return x < 0 || x >= Minecraft.MAX_CHUNK_IN_FILE_X || z < 0 || z >= Minecraft.MAX_CHUNK_IN_FILE_Z;
+  }
 
-				/* mark the sectors previously used for this chunk as free */
-				for (int i = 0; i < sectorsAllocated; ++i) {
-					this.sectorFree.set(sectorNumber + i, true);
-				}
+  private int getOffset(int x, int z) {
+    return this.offsets[x + z * Minecraft.MAX_CHUNK_IN_FILE_X];
+  }
 
-				/* scan for a free space large enough to store this chunk */
-				int runStart = this.sectorFree.indexOf(true);
-				int runLength = 0;
-				if (runStart != -1) {
-					for (int i = runStart; i < this.sectorFree.size(); ++i) {
-						if (runLength != 0) {
-							if (this.sectorFree.get(i)) {
-								runLength++;
-							} else {
-								runLength = 0;
-							}
-						} else if (this.sectorFree.get(i)) {
-							runStart = i;
-							runLength = 1;
-						}
-						if (runLength >= sectorsNeeded) {
-							break;
-						}
-					}
-				}
+  public boolean hasChunk(int x, int z) {
+    return this.getOffset(x, z) != 0;
+  }
 
-				if (runLength >= sectorsNeeded) {
-					/* we found a free space large enough */
-					this.debug("SAVE", x, z, length, "reuse");
-					sectorNumber = runStart;
-					this.setOffset(x, z, (sectorNumber << 8) | sectorsNeeded);
-					for (int i = 0; i < sectorsNeeded; ++i) {
-						this.sectorFree.set(sectorNumber + i, false);
-					}
-					this.write(sectorNumber, data, length);
-				} else {
-					/*
-					 * no free space large enough found -- we need to grow the file
-					 */
-					this.debug("SAVE", x, z, length, "grow");
-					this.file.seek(this.file.length());
-					sectorNumber = this.sectorFree.size();
-					for (int i = 0; i < sectorsNeeded; ++i) {
-						this.file.write(RegionFile.emptySector);
-						this.sectorFree.add(false);
-					}
-					this.sizeDelta += RegionFile.SECTOR_BYTES * sectorsNeeded;
+  private void setOffset(int x, int z, int offset) throws IOException {
+    this.offsets[x + z * Minecraft.MAX_CHUNK_IN_FILE_X] = offset;
+    this.file.seek((x + z * Minecraft.MAX_CHUNK_IN_FILE_X) * 4);
+    this.file.writeInt(offset);
+  }
 
-					this.write(sectorNumber, data, length);
-					this.setOffset(x, z, (sectorNumber << 8) | sectorsNeeded);
-				}
-			}
-			this.setTimestamp(x, z, (int) (System.currentTimeMillis() / 1000L));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+  private void setTimestamp(int x, int z, int value) throws IOException {
+    this.chunkTimestamps[x + z * Minecraft.MAX_CHUNK_IN_FILE_X] = value;
+    this.file.seek(RegionFile.SECTOR_BYTES + (x + z * Minecraft.MAX_CHUNK_IN_FILE_X) * 4);
+    this.file.writeInt(value);
+  }
 
-	/* write a chunk data to the region file at specified sector number */
-	private void write(int sectorNumber, byte[] data, int length) throws IOException {
-		Loggger.log(" " + sectorNumber);
-		this.file.seek(sectorNumber * RegionFile.SECTOR_BYTES);
-		this.file.writeInt(length + 1); // chunk length
-		this.file.writeByte(RegionFile.VERSION_DEFLATE); // chunk version number
-		this.file.write(data, 0, length); // chunk data
-	}
+  public void close() throws IOException {
+    this.file.close();
+  }
 
-	/* is this an invalid chunk coordinate? */
-	private boolean outOfBounds(int x, int z) {
-		return x < 0 || x >= Minecraft.MAX_CHUNK_IN_FILE_X || z < 0 || z >= Minecraft.MAX_CHUNK_IN_FILE_Z;
-	}
+  /*
+   * lets chunk writing be multithreaded by not locking the whole file as a chunk
+   * is serializing -- only writes when serialization is over
+   */
+  class ChunkBuffer extends ByteArrayOutputStream {
 
-	private int getOffset(int x, int z) {
-		return this.offsets[x + z * Minecraft.MAX_CHUNK_IN_FILE_X];
-	}
+    private int x, z;
 
-	public boolean hasChunk(int x, int z) {
-		return this.getOffset(x, z) != 0;
-	}
+    public ChunkBuffer(int x, int z) {
+      super(8096); // initialize to 8KB
+      this.x = x;
+      this.z = z;
+    }
 
-	private void setOffset(int x, int z, int offset) throws IOException {
-		this.offsets[x + z * Minecraft.MAX_CHUNK_IN_FILE_X] = offset;
-		this.file.seek((x + z * Minecraft.MAX_CHUNK_IN_FILE_X) * 4);
-		this.file.writeInt(offset);
-	}
-
-	private void setTimestamp(int x, int z, int value) throws IOException {
-		this.chunkTimestamps[x + z * Minecraft.MAX_CHUNK_IN_FILE_X] = value;
-		this.file.seek(RegionFile.SECTOR_BYTES + (x + z * Minecraft.MAX_CHUNK_IN_FILE_X) * 4);
-		this.file.writeInt(value);
-	}
-
-	public void close() throws IOException {
-		this.file.close();
-	}
+    @Override
+    public void close() {
+      RegionFile.this.write(this.x, this.z, this.buf, this.count);
+    }
+  }
 }
