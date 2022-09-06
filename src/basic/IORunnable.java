@@ -4,5 +4,5 @@ import java.io.IOException;
 
 public interface IORunnable {
 
-	public abstract void run() throws IOException;
+  public abstract void run() throws IOException;
 }

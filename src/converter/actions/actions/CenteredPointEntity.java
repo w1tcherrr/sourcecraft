@@ -8,43 +8,43 @@ import vmfWriter.entity.pointEntity.RotateablePointEntity;
 
 public class CenteredPointEntity extends Action {
 
-	private RotateablePointEntity entity;
-	private float yOffset = 0;
+  private RotateablePointEntity entity;
+  private float yOffset = 0;
 
-	public CenteredPointEntity() {
+  public CenteredPointEntity() {
 
-	}
+  }
 
-	public CenteredPointEntity(String name) {
-		this.setEntity(new RotateablePointEntity().setName(name));
-	}
+  public CenteredPointEntity(String name) {
+    this.setEntity(new RotateablePointEntity().setName(name));
+  }
 
-	public CenteredPointEntity setYOffset(float yOffset) {
-		this.yOffset = yOffset;
-		return this;
-	}
+  public CenteredPointEntity setYOffset(float yOffset) {
+    this.yOffset = yOffset;
+    return this;
+  }
 
-	@Override
-	public void add(Mapper context, Position position, Block material) {
-		context.setPointToGrid(position);
-		context.movePointInGridDimension(0.5, yOffset, 0.5);
-		int verticalAngle = (int) (Math.random() * 360);
-		context.addPointEntity(this.getEntity()
-				.setRotation(verticalAngle));
-		context.markAsConverted(position);
-	}
+  @Override
+  public void add(Mapper context, Position position, Block material) {
+    context.setPointToGrid(position);
+    context.movePointInGridDimension(0.5, yOffset, 0.5);
+    int verticalAngle = (int) (Math.random() * 360);
+    context.addPointEntity(this.getEntity()
+      .setRotation(verticalAngle));
+    context.markAsConverted(position);
+  }
 
-	public CenteredPointEntity setEntity(RotateablePointEntity entity) {
-		this.entity = entity;
-		return this;
-	}
+  protected RotateablePointEntity getEntity() {
+    return this.entity;
+  }
 
-	protected RotateablePointEntity getEntity() {
-		return this.entity;
-	}
+  public CenteredPointEntity setEntity(RotateablePointEntity entity) {
+    this.entity = entity;
+    return this;
+  }
 
-	@Override
-	public boolean isAirBlock() {
-		return true;
-	}
+  @Override
+  public boolean isAirBlock() {
+    return true;
+  }
 }

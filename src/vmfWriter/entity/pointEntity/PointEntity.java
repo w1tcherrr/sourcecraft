@@ -1,32 +1,32 @@
 package vmfWriter.entity.pointEntity;
 
-import java.io.IOException;
-
 import minecraft.Position;
 import vmfWriter.ValveWriter;
 import vmfWriter.entity.Entity;
 
+import java.io.IOException;
+
 public abstract class PointEntity extends Entity {
 
-	protected Position origin;
+  protected Position origin;
 
-	public PointEntity() {
-		this.origin = new Position();
-	}
+  public PointEntity() {
+    this.origin = new Position();
+  }
 
-	public PointEntity(Position origin) {
-		this.origin = new Position(origin);
-	}
+  public PointEntity(Position origin) {
+    this.origin = new Position(origin);
+  }
 
-	protected void setOrigin(Position origin) {
-		this.origin = new Position(origin);
-	}
+  protected void setOrigin(Position origin) {
+    this.origin = new Position(origin);
+  }
 
-	public abstract PointEntity create(Position origin);
+  public abstract PointEntity create(Position origin);
 
-	@Override
-	protected void writeEnd(ValveWriter writer) throws IOException {
-		writer.put(Entity.ORIGIN_TAG, this.origin.getString());
-		super.writeEnd(writer);
-	}
+  @Override
+  protected void writeEnd(ValveWriter writer) throws IOException {
+    writer.put(Entity.ORIGIN_TAG, this.origin.getString());
+    super.writeEnd(writer);
+  }
 }

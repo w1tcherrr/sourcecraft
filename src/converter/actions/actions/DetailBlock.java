@@ -11,11 +11,11 @@ import vmfWriter.entity.solidEntity.FuncDetail;
  */
 public class DetailBlock extends Action {
 
-	@Override
-	public void add(Mapper context, Position p, Block material) {
-		Position end = context.getCuboidFinder()
-				.getBestXYZ(p, material);
-		context.addSolidEntity(new FuncDetail(context.createCuboid(p, end, material)));
-		context.markAsConverted(p, end);
-	}
+  @Override
+  public void add(Mapper context, Position p, Block material) {
+    Position end = context.getCuboidFinder()
+      .getBestXYZ(p, material);
+    context.addSolidEntity(new FuncDetail(context.createCuboid(p, end, material)));
+    context.markAsConverted(p, end);
+  }
 }
