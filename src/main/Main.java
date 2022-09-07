@@ -9,6 +9,8 @@ import periphery.*;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class Main {
 
@@ -32,7 +34,21 @@ public class Main {
     this.gui.setUponRun(() -> {
       this.saveNewPlace();
 
-      File output = new File(this.gui.getOutputFile());
+      String path = this.gui.getOutputFile();
+
+      String lightsPath = path.replace("vmf", "rad");
+      FileWriter lightFileWriter = null;
+      try {
+        lightFileWriter = new FileWriter(lightsPath);
+        lightFileWriter.write("minecraft_original/glowstone 255 249 136 80" + System.lineSeparator());
+        lightFileWriter.write("minecraft_original/sea_lantern 226 254 239 90" + System.lineSeparator());
+        lightFileWriter.write("minecraft_original/beacon 236 254 255 100" + System.lineSeparator());
+        lightFileWriter.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+
+      File output = new File(path);
       ConvertTask data = this.getConverterData();
       if (data == null) {
         return;
