@@ -15,7 +15,7 @@ public abstract class PlayerPositionReader extends NbtReader {
 
     public Position readPlayerData() throws IOException {
         Position position = new Position();
-        this.doCompound(NbtTasks.I.create()
+        this.doCompound(NbtTasks.INSTANCE.create()
                 .put(POS, () -> this.readPosition(position)));
         return position;
     }

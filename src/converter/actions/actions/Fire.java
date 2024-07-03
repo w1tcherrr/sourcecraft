@@ -22,7 +22,7 @@ public class Fire extends Action {
 
     @Override
     public void add(Mapper context, Position position, Block material) {
-        Fire.ENV_FIRE.setFireSize(context.getScale());
+        /*Fire.ENV_FIRE.setFireSize(context.getScale());
         context.setPointToGrid(position);
         context.movePointInGridDimension(0.5, 0, 0.5);
         context.movePointExactly(new Position(0, 1, 0));
@@ -31,7 +31,7 @@ public class Fire extends Action {
         context.movePointInGridDimension(0, 0.5, 0);
         context.movePointExactly(new Position(0, -1, 0));
         context.addPointEntity(Fire.LIGHT);
-        context.markAsConverted(position);
+        context.markAsConverted(position);*/
     }
 
     private double randomOffset(double scale) {

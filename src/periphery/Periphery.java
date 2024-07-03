@@ -75,7 +75,7 @@ public class Periphery {
     }
 
     public static String[] detectTexturePacks() {
-        File file = new File(SC_TEXTURE_FOLDER + File.separator);
+        File file = new File("C:\\Users\\Misch\\Downloads\\SourceCraft_2.12\\textures");
         File[] files = file.listFiles(new DirectoryFilter());
         if (files == null) {
             // TODO

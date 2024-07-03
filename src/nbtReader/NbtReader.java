@@ -60,8 +60,8 @@ public abstract class NbtReader {
         if (tag == NbtTag.END) {
             return false;
         }
-        this.readTitle();
-        this.skipTagAfterTitle(tag);
+        String title = this.readTitle();
+        this.skipTagAfterTitle(title, tag);
         return true;
     }
 
@@ -74,11 +74,12 @@ public abstract class NbtReader {
             return false;
         }
         // tags are nameless
-        this.skipTagAfterTitle(tag);
+        this.skipTagAfterTitle(null, tag);
         return true;
     }
 
-    public void skipTagAfterTitle(int tag) throws IOException {
+    public void skipTagAfterTitle(String title, int tag) throws IOException {
+        System.out.println(tag + ": " + title);
         if (tag == NbtTag.BYTE) {
             this.readByte();
         } else if (tag == NbtTag.SHORT) {
@@ -100,8 +101,7 @@ public abstract class NbtReader {
         } else if (tag == NbtTag.LONG_ARRAY) {
             this.skipLongArray();
         } else {
-            Loggger.warn("File corrupted: Unkown tag occured " + tag + ".");
-            throw new IOException("File corrupted: Unkown tag occured " + tag + ".");
+            Loggger.warn("File corrupted: Unknown tag occured " + tag + ".");
         }
     }
 
@@ -146,7 +146,7 @@ public abstract class NbtReader {
             String title = this.readTitle();
             IORunnable action = onNamedTags.get(new NamedTag(tag, title));
             if (action == null) {
-                this.skipTagAfterTitle(tag);
+                this.skipTagAfterTitle(title, tag);
             } else {
                 action.run();
             }
@@ -160,7 +160,7 @@ public abstract class NbtReader {
             String title = this.readTitle();
             IORunnable action = onNamedTags.get(new NamedTag(tag, title));
             if (action == null) {
-                this.skipTagAfterTitle(tag);
+                this.skipTagAfterTitle(title, tag);
             } else {
                 action.run();
             }
@@ -168,7 +168,7 @@ public abstract class NbtReader {
         }
     }
 
-    public void doCompond(IOConsumer<String> action) throws IOException {
+    public void doCompound(IOConsumer<String> action) throws IOException {
         int tag = this.readTag();
         while (tag != NbtTag.END) {
             String title = this.readTitle();
@@ -186,7 +186,7 @@ public abstract class NbtReader {
         if (tagId == NbtTag.COMPOUND) {
             int listLength = this.readLength();
             for (int i = 0; i < listLength; i++) {
-                action.run(Integer.valueOf(i));
+                action.run(i);
             }
         } else {
             Loggger.warn("File corrupted: Unexpected Tag.");

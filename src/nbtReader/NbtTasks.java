@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class NbtTasks {
 
-    public static final NbtTasks I = new NbtTasks();
+    public static final NbtTasks INSTANCE = new NbtTasks();
 
     private Map<NamedTag, IORunnable> tasks;
 

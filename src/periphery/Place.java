@@ -6,7 +6,6 @@ import minecraft.Position;
 import java.util.Objects;
 
 public class Place {
-
     private String displayName;
     private String world;
 

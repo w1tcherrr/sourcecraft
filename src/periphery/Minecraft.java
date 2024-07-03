@@ -5,7 +5,6 @@ import gui.panel.LabeledCoordinates;
 import main.Main;
 import minecraft.Position;
 import minecraft.World;
-import nbtReader.PlayerInLevelReader;
 import nbtReader.WorldPiece;
 
 import java.io.DataInputStream;
@@ -130,11 +129,6 @@ public class Minecraft {
         Vector<LabeledCoordinates> vector = new Vector<>();
         try {
             DataInputStream stream = new DataInputStream(new GZIPInputStream(new FileInputStream(file)));
-            PlayerInLevelReader reader = new PlayerInLevelReader(stream);
-            Position position = reader.read()
-                    .getPlayerPosition();
-
-            vector.add(new LabeledCoordinates("Player position", position, position));
             vector.add(new LabeledCoordinates("World origin", new Position(-20, 45, -20), new Position(20, 150, 20)));
             return vector;
         } catch (IOException e) {

@@ -9,7 +9,6 @@ import minecraft.Position;
 import nbtReader.ChunkPosition;
 import nbtReader.ChunkReader;
 import nbtReader.PlayerInLevelReader;
-import nbtReader.PlayerReader;
 import nbtReader.RegionFile;
 import nbtReader.Section;
 import nbtReader.WorldPiece;
@@ -44,7 +43,7 @@ public class Converter {
         return string;
     }
 
-    public Converter open(File fileFolder, ConvertTask converterData) throws IOException {
+    public Converter open(File fileFolder, ConvertTask converterData, int worldVersion) throws IOException {
         Place place = converterData.getPlace();
         Skins.init(converterData.getTexturePack(), converterData.getOption()
                 .getScale());
@@ -57,7 +56,7 @@ public class Converter {
             for (int mcZ = start.getZ(); mcZ <= end.getZ(); ) {
                 Loggger.log("from " + mcX + "," + mcZ + " to target " + writeTarget.x + " " + writeTarget.z);
                 WorldPiece convertee = new WorldPiece(new Position(mcX, start.getY(), mcZ), end, writeTarget);
-                this.readChunk(fileFolder, convertee, writeTarget);
+                this.readChunk(fileFolder, convertee, writeTarget, worldVersion);
                 diff = convertee.getAreaXZ();
                 writeTarget.z += diff.z;
 
@@ -69,23 +68,22 @@ public class Converter {
         return this;
     }
 
-    public void readChunk(File fileFolder, WorldPiece worldPiece, Position writeTarget) throws IOException {
+    public void readChunk(File fileFolder, WorldPiece worldPiece, Position writeTarget, int worldVersion) throws IOException {
         File file = Minecraft.getFileOfChunk(fileFolder, worldPiece);
         this.logReadingChunk(worldPiece, file);
         RegionFile regionfile = new RegionFile(file);
-        if (file.exists() == false) {
-            throw new IOException("File does not exist: " + file.toString());
+        if (!file.exists()) {
+            throw new IOException("File does not exist: " + file);
         }
         DataInputStream inputStream = regionfile.getChunkDataInputStream(worldPiece.getLocalChunk()
                         .getX(),
                 worldPiece.getLocalChunk()
                         .getZ());
         if (inputStream == null) {
-            // throw new IOException("cannot find chunk in " + file.toString());
-            Loggger.log("cannot find chunk file " + file.toString());
+            throw new IOException("cannot find chunk in " + file);
         } else {
             // Create NBTReader for chunk.
-            ChunkReader reader = new ChunkReader(inputStream, this, worldPiece);
+            ChunkReader reader = new ChunkReader(inputStream, this, worldPiece, worldVersion);
             reader.readChunk();
             inputStream.close();
         }
@@ -125,8 +123,8 @@ public class Converter {
                 .toFile();
         try {
             File mapFolder = Minecraft.getWorldFolder(converterData.getPlace());
-            this.readLevelInformtaion(mapFolder);
-            this.open(fileFolder, converterData);
+            Tuple<Position, Integer> tuple = this.readLevelInformation(mapFolder);
+            this.open(fileFolder, converterData, tuple.getSecond());
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -134,11 +132,11 @@ public class Converter {
         }
     }
 
-    private Position readLevelInformtaion(File mapFolder) throws IOException {
+    private Tuple<Position, Integer> readLevelInformation(File mapFolder) throws IOException {
         File playerFolder = new File(mapFolder, Minecraft.PLAYERS_FOLDER);
         File[] playerFiles = playerFolder.listFiles(file -> file.getName()
                 .endsWith(Minecraft.DAT_ENDING));
-        if (playerFiles != null && playerFiles.length > 0) { // TODO used for?
+        /* if (playerFiles != null && playerFiles.length > 0) { // TODO used for?
             File playerFile = playerFiles[0];
             if (playerFile != null) {
                 Loggger.log("getting player info from " + playerFile.getName());
@@ -147,13 +145,13 @@ public class Converter {
                 Position playerPosition = playerReader.read();
                 return playerPosition;
             }
-        }
+        }*/
         File levelFile = new File(mapFolder + File.separator + Minecraft.LEVEL_FILE_NAME);
         DataInputStream stream = new DataInputStream(new GZIPInputStream(new FileInputStream(levelFile)));
 
         PlayerInLevelReader levelReader = new PlayerInLevelReader(stream);
         Position localPlayerPosition = levelReader.read()
                 .getPlayerPosition();
-        return localPlayerPosition;
+        return new Tuple<>(localPlayerPosition, levelReader.getDataVersion());
     }
 }

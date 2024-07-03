@@ -45,7 +45,7 @@ public class NbtTag {
             case 12:
                 return "LONG_ARRAY";
             default:
-                return "UNKOWN_TAG";
+                return "UNKNOWN_TAG";
         }
     }
 }

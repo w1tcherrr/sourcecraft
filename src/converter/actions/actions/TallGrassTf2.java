@@ -16,13 +16,12 @@ public class TallGrassTf2 extends Action {
 
     @Override
     public void add(Mapper context, Position p, Block material) {
-        context.setPointToGrid(p);
+        /*context.setPointToGrid(p);
         context.movePointInGridDimension(0.5, 0, 0.5);
         int verticalRotation = (int) (Math.random() * 360);
         TallGrassTf2.TALL_GRASS.getAngles()
                 .setY(verticalRotation);
         context.addPointEntity(TallGrassTf2.TALL_GRASS);
-        context.markAsConverted(p);
+        context.markAsConverted(p);*/
     }
-
 }

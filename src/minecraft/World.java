@@ -24,13 +24,11 @@ public class World {
     private static final String WORLD_ICON_NAME = "icon.png";
 
     private static final int ICON_SIZE = 64;
-
     private String name;
-
     private ImageIcon icon;
-
     private LabeledCoordinates playerPosition;
     private LabeledCoordinates worldSpawnPosition;
+    private int version;
 
     public World(String name) {
         this(Minecraft.getMinecraftPath(), name);
@@ -53,6 +51,7 @@ public class World {
             reader.read();
             player = reader.getPlayerPosition();
             worldSpawn = reader.getWorldSpawn();
+            version = reader.getDataVersion();
             this.playerPosition = new LabeledCoordinates(PLAYER_POSITION, player, player);
             this.worldSpawnPosition = new LabeledCoordinates("World spawn", worldSpawn, worldSpawn);
             this.playerPosition.enlarge(new Position(-20, -30, -20), new Position(20, 30, 20));

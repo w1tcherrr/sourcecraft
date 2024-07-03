@@ -58,6 +58,9 @@ public class BlockMap<Value> {
         if (result != null) {
             return result;
         }
+        if (key == null) {
+            return fallback;
+        }
         String title = key.getName();
         int colonPos = title.indexOf(":");
         String nameSpace = title.substring(0, colonPos);
@@ -83,12 +86,14 @@ public class BlockMap<Value> {
             return value;
         }
         // test without properties
-        this.newSimpleKey.setName(key.getName());
-        this.newSimpleKey.setProperties(null);
-        value = this.map.get(this.newSimpleKey);
-        if (value != null) {
-            this.put(key, value);
-            return value;
+        if (key != null) {
+            this.newSimpleKey.setName(key.getName());
+            this.newSimpleKey.setProperties(null);
+            value = this.map.get(this.newSimpleKey);
+            if (value != null) {
+                this.put(key, value);
+                return value;
+            }
         }
         return null;
     }

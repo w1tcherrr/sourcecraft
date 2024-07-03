@@ -22,13 +22,12 @@ public class LilypadTf2 extends Action {
 
     @Override
     public void add(Mapper context, Position position, Block material) {
-        context.setPointToGrid(position);
+        /*context.setPointToGrid(position);
         context.movePointInGridDimension(0.5, 0, 0.5);
         int verticalAngle = (int) (Math.random() * 360);
         LilypadTf2.LILY_PAD.getAngles()
                 .setY(verticalAngle);
         context.addPointEntity(LilypadTf2.LILY_PAD);
-        context.markAsConverted(position);
+        context.markAsConverted(position);*/
     }
-
 }
