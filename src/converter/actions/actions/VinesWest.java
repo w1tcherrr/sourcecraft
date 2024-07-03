@@ -12,20 +12,20 @@ import vmfWriter.entity.solidEntity.FuncIllusionary;
  */
 public class VinesWest extends Action {
 
-  public VinesWest() {
-    int[] temp = {MaterialLegacy.VINES};
-    super.setMaterialUsedFor(temp);
-  }
+    public VinesWest() {
+        int[] temp = {MaterialLegacy.VINES};
+        super.setMaterialUsedFor(temp);
+    }
 
-  @Override
-  public void add(Mapper context, Position p, Block material) {
-    Position end = context.getCuboidFinder()
-      .getBestY(p, material);
-    int parts = 8;
-    Position offset = new Position(0, 0, 0);
-    Position negativeOffset = new Position(7, 0, 0);
-    context.addSolidEntity(
-      new FuncIllusionary(context.createCuboid(p, end, parts, offset, negativeOffset, material)));
-    context.markAsConverted(p, end);
-  }
+    @Override
+    public void add(Mapper context, Position p, Block material) {
+        Position end = context.getCuboidFinder()
+                .getBestY(p, material);
+        int parts = 8;
+        Position offset = new Position(0, 0, 0);
+        Position negativeOffset = new Position(7, 0, 0);
+        context.addSolidEntity(
+                new FuncIllusionary(context.createCuboid(p, end, parts, offset, negativeOffset, material)));
+        context.markAsConverted(p, end);
+    }
 }

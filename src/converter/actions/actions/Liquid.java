@@ -10,11 +10,11 @@ import minecraft.Position;
  */
 public class Liquid extends Action {
 
-  @Override
-  public void add(Mapper context, Position position, Block material) {
-    Position end = context.getCuboidFinder()
-      .getBestXYZ(position, material);
-    context.addSolid(context.createCuboid(position, end, material));
-    context.markAsConverted(position, end);
-  }
+    @Override
+    public void add(Mapper context, Position position, Block material) {
+        Position end = context.getCuboidFinder()
+                .getBestXYZ(position, material);
+        context.addSolid(context.createCuboid(position, end, material));
+        context.markAsConverted(position, end);
+    }
 }

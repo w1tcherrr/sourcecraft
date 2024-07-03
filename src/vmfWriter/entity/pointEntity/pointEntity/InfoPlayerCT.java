@@ -5,18 +5,18 @@ import vmfWriter.entity.pointEntity.RotateablePointEntity;
 
 public class InfoPlayerCT extends RotateablePointEntity {
 
-  @Override
-  public InfoPlayerCT create(Position origin) {
-    InfoPlayerCT result = new InfoPlayerCT();
-    result.setRotation(this.getRotation());
-    result.setOrigin(origin);
-    return result;
-  }
+    @Override
+    public InfoPlayerCT create(Position origin) {
+        InfoPlayerCT result = new InfoPlayerCT();
+        result.setRotation(this.getRotation());
+        result.setOrigin(origin);
+        return result;
+    }
 
-  @Override
-  public String getName() {
-    return "info_player_counterterrorist";
-  }
+    @Override
+    public String getName() {
+        return "info_player_counterterrorist";
+    }
 
 //	@Override
 //	public void writeVmfSpecific(ValveWriter writer) throws IOException {

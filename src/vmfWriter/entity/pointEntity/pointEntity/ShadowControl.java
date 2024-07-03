@@ -9,28 +9,28 @@ import java.io.IOException;
 
 public class ShadowControl extends PointEntity {
 
-  private Color shadow;
+    private Color shadow;
 
-  public ShadowControl(Position origin, Color shadowNew) {
-    super(origin);
-    this.shadow = new Color(shadowNew);
-  }
+    public ShadowControl(Position origin, Color shadowNew) {
+        super(origin);
+        this.shadow = new Color(shadowNew);
+    }
 
-  @Override
-  public ShadowControl create(Position origin) {
-    return new ShadowControl(origin, this.shadow);
-  }
+    @Override
+    public ShadowControl create(Position origin) {
+        return new ShadowControl(origin, this.shadow);
+    }
 
-  @Override
-  public String getName() {
-    return "shadow_control";
-  }
+    @Override
+    public String getName() {
+        return "shadow_control";
+    }
 
-  @Override
-  public void writeVmfSpecific(ValveWriter writer) throws IOException {
-    writer.put("angles", "-70 356 0")
-      .put("color", this.shadow)
-      .put("disableallshadows", false)
-      .put("distance", 75);
-  }
+    @Override
+    public void writeVmfSpecific(ValveWriter writer) throws IOException {
+        writer.put("angles", "-70 356 0")
+                .put("color", this.shadow)
+                .put("disableallshadows", false)
+                .put("distance", 75);
+    }
 }

@@ -2,17 +2,17 @@ package converter;
 
 public class ConvertingReport {
 
-  private int brushCount;
+    private int brushCount;
 
-  public ConvertingReport() {
+    public ConvertingReport() {
 
-  }
+    }
 
-  public int getBrushCount() {
-    return this.brushCount;
-  }
+    public int getBrushCount() {
+        return this.brushCount;
+    }
 
-  public void setBrushCount(int brushCount) {
-    this.brushCount = brushCount;
-  }
+    public void setBrushCount(int brushCount) {
+        this.brushCount = brushCount;
+    }
 }

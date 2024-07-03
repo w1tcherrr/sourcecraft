@@ -7,11 +7,11 @@ import minecraft.Position;
 
 public class NoAction extends Action {
 
-  public static final NoAction INSTANCE = new NoAction();
+    public static final NoAction INSTANCE = new NoAction();
 
-  @Override
-  public void add(Mapper context, Position position, Block material) {
-    context.markAsConverted(position);
-  }
+    @Override
+    public void add(Mapper context, Position position, Block material) {
+        context.markAsConverted(position);
+    }
 
 }

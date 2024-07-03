@@ -12,47 +12,47 @@ import java.nio.file.Path;
 
 public class ConfigIO {
 
-  public static void write(Config config, Path target) throws IOException {
-    Gson gson = new GsonBuilder().setPrettyPrinting()
-      .create();
-    String toSafe = gson.toJson(config);
+    public static void write(Config config, Path target) throws IOException {
+        Gson gson = new GsonBuilder().setPrettyPrinting()
+                .create();
+        String toSafe = gson.toJson(config);
 
-    Files.write(target, toSafe.getBytes());
-  }
-
-  public static Config obtain(Config config, Path path) {
-    try {
-      if (path.toFile()
-        .exists()) {
-        config = ConfigIO.read(config, path);
-      } else {
-        config = Config.getDetaulftConfig();
-      }
-    } catch (IOException e1) {
-      Loggger.log("No fonig at " + path + " found.");
+        Files.write(target, toSafe.getBytes());
     }
-    return config;
-  }
 
-  public static Config read(Config config, Path source) throws IOException {
-    Gson gson = getGson();
-    String fileAsString = new String(Files.readAllBytes(source));
-    config = gson.fromJson(fileAsString, Config.class);
+    public static Config obtain(Config config, Path path) {
+        try {
+            if (path.toFile()
+                    .exists()) {
+                config = ConfigIO.read(config, path);
+            } else {
+                config = Config.getDetaulftConfig();
+            }
+        } catch (IOException e1) {
+            Loggger.log("No fonig at " + path + " found.");
+        }
+        return config;
+    }
 
-    return config;
-  }
+    public static Config read(Config config, Path source) throws IOException {
+        Gson gson = getGson();
+        String fileAsString = new String(Files.readAllBytes(source));
+        config = gson.fromJson(fileAsString, Config.class);
 
-  private static Gson getGson() {
-    GsonBuilder gsonBuilder = new GsonBuilder();
+        return config;
+    }
 
-    gsonBuilder.registerTypeAdapter(periphery.Place.class, (InstanceCreator<Place>) arg0 -> new periphery.Place());
+    private static Gson getGson() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
 
-    gsonBuilder.registerTypeAdapter(vmfWriter.Color.class, (InstanceCreator<Color>) arg0 -> new vmfWriter.Color());
+        gsonBuilder.registerTypeAdapter(periphery.Place.class, (InstanceCreator<Place>) arg0 -> new periphery.Place());
 
-    gsonBuilder.registerTypeAdapter(periphery.ConvertOption.class,
-      (InstanceCreator<ConvertOption>) arg0 -> new periphery.ConvertOption());
+        gsonBuilder.registerTypeAdapter(vmfWriter.Color.class, (InstanceCreator<Color>) arg0 -> new vmfWriter.Color());
 
-    gsonBuilder.registerTypeAdapter(SourceGame.class, (InstanceCreator<SourceGame>) arg0 -> new SourceGame());
-    return gsonBuilder.create();
-  }
+        gsonBuilder.registerTypeAdapter(periphery.ConvertOption.class,
+                (InstanceCreator<ConvertOption>) arg0 -> new periphery.ConvertOption());
+
+        gsonBuilder.registerTypeAdapter(SourceGame.class, (InstanceCreator<SourceGame>) arg0 -> new SourceGame());
+        return gsonBuilder.create();
+    }
 }

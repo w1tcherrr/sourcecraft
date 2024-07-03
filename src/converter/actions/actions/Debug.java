@@ -7,9 +7,9 @@ import minecraft.Position;
 
 public class Debug extends Action {
 
-  @Override
-  public void add(Mapper context, Position position, Block block) {
-    this.addDebugMarker(context, position, block);
-  }
+    @Override
+    public void add(Mapper context, Position position, Block block) {
+        this.addDebugMarker(context, position, block);
+    }
 
 }

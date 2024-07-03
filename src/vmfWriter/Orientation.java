@@ -1,8 +1,8 @@
 package vmfWriter;
 
 public enum Orientation {
-  NORTH,
-  WEST,
-  SOUTH,
-  EAST
+    NORTH,
+    WEST,
+    SOUTH,
+    EAST
 }
