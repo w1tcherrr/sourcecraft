@@ -73,7 +73,8 @@ public class ChunkReader extends NbtReader {
             this.doCompound(NbtTasks.INSTANCE.create()
                     .put(Y, () -> section.setHeight(this.readByte()))
                     .put(BLOCK_STATES_OLD, () -> section.readBlocksRaw(this))
-                    .put(PALETTE_OLD, () -> this.readPalette(section)));
+                    .put(PALETTE_OLD, () -> this.readPalette(section)),
+                    () -> section.updateBlocks());
         } else {
             this.doCompound(NbtTasks.INSTANCE.create()
                     .put(Y, () -> section.setHeight(this.readByte()))

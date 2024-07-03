@@ -6,12 +6,13 @@ public class BitNbtReader {
 
     private static final int LONG_END = 64;
 
-    private NbtReader source;
+    private int index = 0;
+    private long[] source;
     private long amount;
     private long currentByte;
     private long currentPos = LONG_END;
 
-    public BitNbtReader(NbtReader source, int amount) {
+    public BitNbtReader(long[] source, int amount) {
         this.source = source;
         this.amount = amount;
     }
@@ -22,7 +23,8 @@ public class BitNbtReader {
         for (int i = 0; i < this.amount; i++) {
             if (this.currentPos == LONG_END) {
                 this.currentPos = 0;
-                this.currentByte = this.source.readLong();
+                this.currentByte = this.source[index];
+                ++index;
             }
             long bit = (this.currentByte >> this.currentPos) & 1L;
             long mask = (bit << resultPos);

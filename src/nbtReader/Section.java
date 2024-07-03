@@ -16,6 +16,7 @@ public class Section {
 
     private int firstYPosition;
 
+    private long[] blocks;
     private int[][][] rawBlocks = new int[Minecraft.CHUNK_SIZE_X][Minecraft.SECTION_SIZE_Y][Minecraft.CHUNK_SIZE_Z];
     private Map<Integer, Block> palette = new HashMap<Integer, Block>();
 
@@ -37,14 +38,26 @@ public class Section {
 
     public void readBlocksRaw(NbtReader source) throws IOException {
         int length = source.readLength();
-        int unitSize = this.getUnitLength(length);
-        BitNbtReader reader = new BitNbtReader(source, unitSize);
-        for (int y = 0; y < Minecraft.SECTION_SIZE_Y; y++) {
-            for (int z = 0; z < Minecraft.CHUNK_SIZE_Z; z++) {
-                for (int x = 0; x < Minecraft.CHUNK_SIZE_X; x++) {
-                    this.rawBlocks[x][y][z] = reader.readBits();
+        this.blocks = new long[length];
+        for (int i = 0; i < length; i++) {
+            blocks[i] = source.readLong();
+        }
+    }
+
+    public void updateBlocks() {
+        try {
+            int length = blocks.length;
+            int unitSize = this.getUnitLength(length);
+            BitNbtReader reader = new BitNbtReader(blocks, unitSize);
+            for (int y = 0; y < Minecraft.SECTION_SIZE_Y; y++) {
+                for (int z = 0; z < Minecraft.CHUNK_SIZE_Z; z++) {
+                    for (int x = 0; x < Minecraft.CHUNK_SIZE_X; x++) {
+                        this.rawBlocks[x][y][z] = reader.readBits();
+                    }
                 }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

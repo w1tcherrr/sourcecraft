@@ -168,6 +168,11 @@ public abstract class NbtReader {
         }
     }
 
+    public void doCompound(NbtTasks onNamedTags, Runnable r) throws IOException {
+        doCompound(onNamedTags);
+        r.run();
+    }
+
     public void doCompound(IOConsumer<String> action) throws IOException {
         int tag = this.readTag();
         while (tag != NbtTag.END) {
